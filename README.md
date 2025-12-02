@@ -1,4 +1,3 @@
-README.txt
 Projeto Estacionamento Concorrente - Documentação Completa
 
 ========================================================
