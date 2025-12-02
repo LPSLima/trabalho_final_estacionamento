@@ -1,4 +1,4 @@
-panel.c
+
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,3 +25,4 @@ int main(){
     printf("Painel encerrado.\n");
     return 0;
 }
+
