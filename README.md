@@ -1,8 +1,8 @@
 Projeto Estacionamento Concorrente - Documentação Completa
 
-========================================================
+=========================================================
 1. Objetivo do Projeto
-========================================================
+=========================================================
 
 O projeto simula o gerenciamento de um estacionamento com múltiplas vagas, usando conceitos de programação concorrente e mecanismos de comunicação e sincronização entre processos e threads. 
 
@@ -16,9 +16,9 @@ O objetivo é demonstrar de forma prática:
 
 O sistema deve gerenciar a entrada e saída de carros, atualizar sensores em tempo real e exibir informações em um painel eletrônico.
 
-========================================================
+=========================================================
 2. Funcionalidade do Projeto
-========================================================
+=========================================================
 
 - Cada carro é um **processo independente**, que entra, ocupa uma vaga, permanece por algum tempo e depois sai.
 - Threads sensores monitoram continuamente as vagas e registram informações em tempo real.
@@ -26,9 +26,9 @@ O sistema deve gerenciar a entrada e saída de carros, atualizar sensores em tem
 - O manager encerra o sistema quando todos os carros finalizaram.
 - As vagas livres são controladas por semáforos, garantindo que não ocorram condições de corrida.
 
-========================================================
+=========================================================
 3. Arquitetura e Componentes do Sistema
-========================================================
+=========================================================
 
 1. **common.h**: Define constantes, a estrutura da memória compartilhada (vagas, semáforos, mutex) e nomes para IPC.
 2. **manager.c**: 
@@ -45,9 +45,9 @@ O sistema deve gerenciar a entrada e saída de carros, atualizar sensores em tem
    - Compila os arquivos `manager.c`, `car.c` e `panel.c`.
    - Permite limpar executáveis com `make clean`.
 
-========================================================
+=========================================================
 4. Mecanismos de IPC e Sincronização
-========================================================
+=========================================================
 
 | Mecanismo                     | Uso no Projeto |
 |--------------------------------|----------------|
@@ -59,9 +59,9 @@ O sistema deve gerenciar a entrada e saída de carros, atualizar sensores em tem
 | Filas de mensagens POSIX (mq_open, mq_send, mq_receive) | Comunicação de eventos para o painel |
 | Sinais (SIGINT)                | Encerramento seguro de threads e processos |
 
-========================================================
+=========================================================
 5. Como Executar
-========================================================
+=========================================================
 
 1. Compile o projeto na pasta `src`:
 
@@ -87,9 +87,9 @@ Isso gera os executáveis: `manager`, `car` e `panel`.
    
    make clean
 
-========================================================
+=========================================================
 6. Explicação do Funcionamento
-========================================================
+=========================================================
 
 Exemplo de saída do sistema:
 
@@ -129,18 +129,18 @@ Manager encerrado.
 - "Todos os carros finalizaram" → todos processos carros terminaram.
 - "Manager encerrado" → threads sensores finalizam, fila de mensagens fechada e memória compartilhada liberada.
 
-========================================================
+=========================================================
 7. Observações e Melhorias Possíveis
-========================================================
+=========================================================
 
 - O projeto segue o modelo **produtor-consumidor** garantindo que não ocorra condições de corrida.
 - Número de carros (`N_CARS`) e sensores (`N_WORKERS`) pode ser ajustado em `manager.c`.
 - Sistema permite monitoramento em tempo real de todas as vagas do estacionamento.
 - Para apresentação, pode-se mostrar **painel eletrônico e log do manager** simultaneamente.
 
-========================================================
+=========================================================
 8. Estrutura do Projeto
-========================================================
+=========================================================
 
 trabalho_final_estacionamento/
 ├── src/
