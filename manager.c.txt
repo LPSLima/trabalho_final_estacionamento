@@ -1,4 +1,4 @@
-manager.c
+
 
 #define _XOPEN_SOURCE 700
 #include <stdio.h>
@@ -108,3 +108,4 @@ int main(){
     printf("Manager encerrado.\n");
     return 0;
 }
+
