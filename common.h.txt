@@ -1,0 +1,26 @@
+common.h
+
+#ifndef COMMON_H
+#define COMMON_H
+
+#include <semaphore.h>
+#include <mqueue.h>
+
+#define SHM_NAME "/shm_estacionamento"
+#define MQ_NAME  "/mq_estacionamento"
+#define FIFO_ADMIN "/tmp/est_admin_fifo"
+
+#define MAX_SLOTS 10    // número máximo de vagas
+#define MQ_MSGSIZE 256
+
+typedef struct {
+    int slots[MAX_SLOTS];   // 0 = livre, >0 = pid do carro, -1 = reservado
+    int max_slots;          // número real de vagas (<= MAX_SLOTS)
+    int in_use;             // total ocupadas (somente informativo)
+    sem_t sem_empty;        // conta vagas livres (producer-consumer estilo)
+    sem_t sem_full;         // conta vagas ocupadas
+    sem_t sem_mutex;        // mutex POSIX (sem) para acesso à estrutura
+    int closed;             // flag para indicar fechamento do estacionamento
+} shm_est_t;
+
+#endif

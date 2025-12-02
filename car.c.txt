@@ -1,0 +1,60 @@
+car.c
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <semaphore.h>
+#include <mqueue.h>
+#include "common.h"
+
+int main(int argc, char *argv[]){
+    if(argc < 2){
+        printf("Carro sem ID!\n");
+        return 1;
+    }
+    int id = atoi(argv[1]);
+
+    int shmfd = shm_open(SHM_NAME, O_RDWR, 0666);
+    shm_est_t *shm = mmap(NULL, sizeof(shm_est_t), PROT_READ | PROT_WRITE, MAP_SHARED, shmfd, 0);
+
+    mqd_t mq = mq_open(MQ_NAME, O_WRONLY);
+
+    // Estaciona
+    sem_wait(&shm->sem_empty);
+    sem_wait(&shm->sem_mutex);
+
+    int slot = -1;
+    for(int i = 0; i < shm->max_slots; i++){
+        if(shm->slots[i] == 0){
+            shm->slots[i] = getpid();
+            slot = i;
+            shm->in_use++;
+            break;
+        }
+    }
+
+    char msg[128];
+    snprintf(msg, sizeof(msg), "Carro %d estacionou na vaga %d (PID %d)", id, slot, getpid());
+    printf("%s\n", msg);
+    mq_send(mq, msg, strlen(msg)+1, 0);
+
+    sem_post(&shm->sem_mutex);
+
+    sleep(2); // tempo de permanência
+
+    // Sai do estacionamento
+    sem_wait(&shm->sem_mutex);
+    shm->slots[slot] = 0;
+    shm->in_use--;
+    sem_post(&shm->sem_mutex);
+    sem_post(&shm->sem_empty);
+
+    snprintf(msg, sizeof(msg), "[Car %d] saiu da vaga %d", id, slot);
+    printf("%s\n", msg);
+    mq_send(mq, msg, strlen(msg)+1, 0);
+
+    return 0;
+}

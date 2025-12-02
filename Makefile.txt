@@ -1,0 +1,19 @@
+Makefile
+
+CC = gcc
+CFLAGS = -Wall -Wextra -pthread
+LDFLAGS = -lrt
+
+all: manager panel car
+
+manager: manager.c common.h
+	$(CC) $(CFLAGS) manager.c -o manager $(LDFLAGS)
+
+panel: panel.c common.h
+	$(CC) $(CFLAGS) panel.c -o panel $(LDFLAGS)
+
+car: car.c common.h
+	$(CC) $(CFLAGS) car.c -o car $(LDFLAGS)
+
+clean:
+	rm -f manager panel car

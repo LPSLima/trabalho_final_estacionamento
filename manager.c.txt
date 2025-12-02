@@ -1,0 +1,110 @@
+manager.c
+
+#define _XOPEN_SOURCE 700
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <sys/wait.h>
+#include <pthread.h>
+#include <mqueue.h>
+#include <semaphore.h>
+#include <signal.h>
+#include "common.h"
+
+#define N_WORKERS 3
+#define N_CARS 8
+
+shm_est_t *shm;
+mqd_t mq;
+volatile sig_atomic_t stop = 0;
+
+void handle_int(int s){
+    (void)s;
+    stop = 1;
+}
+
+void send_msg(const char *m){
+    mq_send(mq, m, strlen(m)+1, 0);
+}
+
+void *sensor(void *arg){
+    int id = *(int*)arg;
+    char buf[128];
+    while(!stop){
+        sem_wait(&shm->sem_full);
+        sem_wait(&shm->sem_mutex);
+        snprintf(buf, sizeof(buf), "Sensor %d registrando carro... Vagas livres: %d", id, shm->max_slots - shm->in_use);
+        printf("%s\n", buf);
+        sem_post(&shm->sem_mutex);
+        sem_post(&shm->sem_full);
+        sleep(1);
+    }
+    return NULL;
+}
+
+int main(){
+    signal(SIGINT, handle_int);
+
+    // Memória compartilhada
+    int shmfd = shm_open(SHM_NAME, O_CREAT | O_RDWR, 0666);
+    ftruncate(shmfd, sizeof(shm_est_t));
+    shm = mmap(NULL, sizeof(shm_est_t), PROT_READ | PROT_WRITE, MAP_SHARED, shmfd, 0);
+
+    shm->max_slots = MAX_SLOTS;
+    shm->in_use = 0;
+    shm->closed = 0;
+    for(int i = 0; i < MAX_SLOTS; i++)
+        shm->slots[i] = 0;
+
+    sem_init(&shm->sem_empty, 1, MAX_SLOTS);
+    sem_init(&shm->sem_full, 1, 0);
+    sem_init(&shm->sem_mutex, 1, 1);
+
+    // Fila de mensagens
+    struct mq_attr attr = {0, 10, MQ_MSGSIZE, 0};
+    mq_unlink(MQ_NAME);
+    mq = mq_open(MQ_NAME, O_CREAT | O_WRONLY, 0666, &attr);
+
+    // Threads sensores
+    pthread_t th[N_WORKERS];
+    int ids[N_WORKERS];
+    for(int i = 0; i < N_WORKERS; i++){
+        ids[i] = i+1;
+        pthread_create(&th[i], NULL, sensor, &ids[i]);
+    }
+
+    // Criar carros
+    for(int i = 1; i <= N_CARS; i++){
+        pid_t pid = fork();
+        if(pid == 0){
+            char num[5];
+            snprintf(num, sizeof(num), "%d", i);
+            execl("./car", "./car", num, NULL);
+            perror("execl");
+            exit(1);
+        }
+    }
+
+    // Espera carros terminarem
+    for(int i = 0; i < N_CARS; i++)
+        wait(NULL);
+
+    stop = 1;
+
+    // Encerra threads sensores
+    for(int i = 0; i < N_WORKERS; i++)
+        pthread_join(th[i], NULL);
+
+    // Envia mensagem de fechamento
+    send_msg("Estacionamento fechado");
+
+    mq_close(mq);
+    shm_unlink(SHM_NAME);
+
+    printf("Manager encerrado.\n");
+    return 0;
+}

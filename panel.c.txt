@@ -1,0 +1,27 @@
+panel.c
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <mqueue.h>
+#include <string.h>
+#include "common.h"
+
+int main(){
+    mqd_t mq = mq_open(MQ_NAME, O_RDONLY);
+    char msg[MQ_MSGSIZE];
+
+    printf("=== Painel Eletrônico (Iniciado) ===\n");
+    while(1){
+        ssize_t n = mq_receive(mq, msg, MQ_MSGSIZE, NULL);
+        if(n > 0){
+            msg[n] = '\0';
+            printf("[PAINEL] %s\n", msg);
+            if(strncmp(msg, "Estacionamento fechado", 21) == 0)
+                break;
+        }
+    }
+
+    mq_close(mq);
+    printf("Painel encerrado.\n");
+    return 0;
+}
